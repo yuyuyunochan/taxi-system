@@ -2,6 +2,12 @@ server:
   port: 8082
 
 spring:
+  application:
+    name: trip-service
+
+  profiles:
+    active: stub
+
   datasource:
     url: jdbc:postgresql://localhost:5434/trip_db
     username: user
@@ -9,6 +15,7 @@ spring:
     driver-class-name: org.postgresql.Driver
 
   jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
     show-sql: true
@@ -26,3 +33,6 @@ spring:
     redis:
       host: localhost
       port: 6379
+
+tariff:
+  price-per-km: 2.5
