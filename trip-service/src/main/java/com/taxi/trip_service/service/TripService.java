@@ -3,9 +3,12 @@ package com.taxi.trip_service.service;
 import com.taxi.trip_service.client.UserServiceClient;
 import com.taxi.trip_service.dto.*;
 import com.taxi.trip_service.entity.Trip;
+import com.taxi.trip_service.entity.Driver;
 import com.taxi.trip_service.enums.TripStatus;
+import com.taxi.trip_service.enums.DriverStatus;
 import com.taxi.trip_service.exception.*;
 import com.taxi.trip_service.repository.TripRepository;
+import com.taxi.trip_service.repository.DriverRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +27,7 @@ public class TripService {
 
     private final TripRepository tripRepository;
     private final UserServiceClient userServiceClient;
+    private final DriverRepository driverRepository;
 
     @Value("${tariff.price-per-km:2.5}")
     private double pricePerKm;
@@ -42,20 +46,18 @@ public class TripService {
                     );
                 });
 
-        Long driverId = userServiceClient.findAvailableDriver();
-        if (driverId == null) {
-            throw new NoAvailableDriverException();
-        }
+        Driver driver = driverRepository
+                .findFirstAvailableDriverForUpdate()
+                .orElseThrow(NoAvailableDriverException::new);
 
-        userServiceClient.updateDriverStatus(driverId, "BUSY");
+        driver.setStatus(DriverStatus.BUSY);
 
         double distance = 5 + Math.random() * 45;
-
         BigDecimal price = BigDecimal.valueOf(distance * pricePerKm);
 
         Trip trip = Trip.builder()
                 .passengerId(request.getPassengerId())
-                .driverId(driverId)
+                .driverId(driver.getId())
                 .status(TripStatus.CREATED)
                 .origin(request.getOrigin())
                 .destination(request.getDestination())
@@ -64,8 +66,7 @@ public class TripService {
                 .build();
 
         Trip saved = tripRepository.save(trip);
-        log.info("Trip created: id={}, driver={}", saved.getId(), driverId);
-
+        log.info("Trip created: id={}, driver={}", saved.getId(), driver.getId());
         return toResponse(saved);
     }
 
