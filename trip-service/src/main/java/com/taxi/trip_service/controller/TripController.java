@@ -32,6 +32,10 @@ public class TripController {
             @RequestParam Long passengerId) {
         return tripService.getTripsByPassenger(passengerId);
     }
+    @GetMapping("/drivers/available")
+    public List<?> getAvailableDrivers() {
+        return tripService.getAvailableDrivers();
+    }
 
     @PatchMapping("/{id}/status")
     public TripResponse updateStatus(

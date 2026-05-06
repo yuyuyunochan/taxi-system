@@ -9,6 +9,7 @@ import com.taxi.trip_service.enums.TripStatus;
 import com.taxi.trip_service.exception.*;
 import com.taxi.trip_service.repository.DriverRepository;
 import com.taxi.trip_service.repository.TripRepository;
+import com.taxi.trip_service.service.DriverCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,7 +26,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class TripService {
-
+    private final DriverCacheService driverCacheService;
     private final TripRepository tripRepository;
     private final DriverRepository driverRepository;
     private final UserServiceClient userServiceClient;
@@ -52,7 +53,7 @@ public class TripService {
                 .orElseThrow(NoAvailableDriverException::new);
 
         driver.setStatus(DriverStatus.BUSY);
-
+        driverCacheService.invalidateCache();
         double distance = 5 + Math.random() * 45;
 
         BigDecimal price = BigDecimal
@@ -88,6 +89,9 @@ public class TripService {
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+    public List<Driver> getAvailableDrivers() {
+        return driverCacheService.getAvailableDrivers();
     }
     @Transactional
     public TripResponse updateStatus(Long id, StatusUpdateRequest request) {
@@ -159,6 +163,7 @@ public class TripService {
         driverRepository.findById(driverId)
                 .ifPresent(driver -> {
                     driver.setStatus(DriverStatus.AVAILABLE);
+                    driverCacheService.invalidateCache();
                     log.info("Driver {} released and set to AVAILABLE", driverId);
                 });
     }

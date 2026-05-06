@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import jakarta.persistence.LockModeType;
 import java.util.Optional;
+import java.util.List;
 
 public interface DriverRepository extends JpaRepository<Driver, Long> {
 
@@ -19,4 +20,5 @@ public interface DriverRepository extends JpaRepository<Driver, Long> {
         LIMIT 1
     """)
     Optional<Driver> findFirstAvailableDriverForUpdate();
+    List<Driver> findByStatus(DriverStatus status);
 }
