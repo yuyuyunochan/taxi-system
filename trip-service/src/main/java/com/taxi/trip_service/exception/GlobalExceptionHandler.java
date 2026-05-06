@@ -13,36 +13,39 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(TripNotFoundException.class)
     public ResponseEntity<?> handleTripNotFound(TripNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of(
-                        "error", ex.getMessage(),
-                        "timestamp", LocalDateTime.now()
-                ));
-    }
-
-    @ExceptionHandler(NoAvailableDriverException.class)
-    public ResponseEntity<?> handleNoDriver(NoAvailableDriverException ex) {
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body(Map.of(
-                        "error", ex.getMessage(),
-                        "timestamp", LocalDateTime.now()
-                ));
+        return build(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
     @ExceptionHandler(PassengerNotFoundException.class)
     public ResponseEntity<?> handlePassengerNotFound(PassengerNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of(
-                        "error", ex.getMessage(),
-                        "timestamp", LocalDateTime.now()
-                ));
+        return build(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(NoAvailableDriverException.class)
+    public ResponseEntity<?> handleNoDriver(NoAvailableDriverException ex) {
+        return build(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidStatusTransitionException.class)
+    public ResponseEntity<?> handleInvalidTransition(InvalidStatusTransitionException ex) {
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<?> handleBusiness(BusinessException ex) {
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGeneral(Exception ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+    }
+
+    private ResponseEntity<?> build(HttpStatus status, String message) {
+        return ResponseEntity.status(status)
                 .body(Map.of(
-                        "error", ex.getMessage(),
+                        "status", status.value(),
+                        "error", message,
                         "timestamp", LocalDateTime.now()
                 ));
     }

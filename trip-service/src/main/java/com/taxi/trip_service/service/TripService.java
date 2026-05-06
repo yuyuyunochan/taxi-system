@@ -2,13 +2,13 @@ package com.taxi.trip_service.service;
 
 import com.taxi.trip_service.client.UserServiceClient;
 import com.taxi.trip_service.dto.*;
-import com.taxi.trip_service.entity.Trip;
 import com.taxi.trip_service.entity.Driver;
-import com.taxi.trip_service.enums.TripStatus;
+import com.taxi.trip_service.entity.Trip;
 import com.taxi.trip_service.enums.DriverStatus;
+import com.taxi.trip_service.enums.TripStatus;
 import com.taxi.trip_service.exception.*;
-import com.taxi.trip_service.repository.TripRepository;
 import com.taxi.trip_service.repository.DriverRepository;
+import com.taxi.trip_service.repository.TripRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,8 +27,8 @@ import java.util.stream.Collectors;
 public class TripService {
 
     private final TripRepository tripRepository;
-    private final UserServiceClient userServiceClient;
     private final DriverRepository driverRepository;
+    private final UserServiceClient userServiceClient;
 
     @Value("${tariff.price-per-km:2.5}")
     private double pricePerKm;
@@ -40,9 +41,9 @@ public class TripService {
         }
 
         tripRepository.findActiveTripByPassenger(request.getPassengerId())
-                .ifPresent(existingTrip -> {
-                    throw new RuntimeException(
-                            "Passenger already has an active trip with id: " + existingTrip.getId()
+                .ifPresent(existing -> {
+                    throw new BusinessException(
+                            "Passenger already has active trip with id: " + existing.getId()
                     );
                 });
 
@@ -53,7 +54,10 @@ public class TripService {
         driver.setStatus(DriverStatus.BUSY);
 
         double distance = 5 + Math.random() * 45;
-        BigDecimal price = BigDecimal.valueOf(distance * pricePerKm);
+
+        BigDecimal price = BigDecimal
+                .valueOf(distance * pricePerKm)
+                .setScale(2, RoundingMode.HALF_UP);
 
         Trip trip = Trip.builder()
                 .passengerId(request.getPassengerId())
@@ -66,7 +70,10 @@ public class TripService {
                 .build();
 
         Trip saved = tripRepository.save(trip);
-        log.info("Trip created: id={}, driver={}", saved.getId(), driver.getId());
+
+        log.info("Trip created: id={}, driver={}, price={}",
+                saved.getId(), driver.getId(), price);
+
         return toResponse(saved);
     }
 
@@ -82,65 +89,78 @@ public class TripService {
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
-
     @Transactional
     public TripResponse updateStatus(Long id, StatusUpdateRequest request) {
 
         Trip trip = tripRepository.findById(id)
                 .orElseThrow(() -> new TripNotFoundException(id));
 
-        TripStatus currentStatus = trip.getStatus();
-        TripStatus newStatus = request.getStatus();
+        TripStatus current = trip.getStatus();
+        TripStatus next = request.getStatus();
 
-        if (!isValidStatusTransition(currentStatus, newStatus)) {
-            throw new RuntimeException(
-                    "Invalid status transition from " + currentStatus + " to " + newStatus
-            );
+        if (!isValidStatusTransition(current, next)) {
+            throw new InvalidStatusTransitionException(current, next);
         }
 
-        trip.setStatus(newStatus);
+        trip.setStatus(next);
 
-        if (newStatus == TripStatus.COMPLETED || newStatus == TripStatus.CANCELLED) {
-            if (trip.getDriverId() != null) {
-                userServiceClient.updateDriverStatus(trip.getDriverId(), "AVAILABLE");
-            }
+        if (next == TripStatus.COMPLETED || next == TripStatus.CANCELLED) {
+            releaseDriver(trip.getDriverId());
         }
 
         Trip updated = tripRepository.save(trip);
-        log.info("Trip {} status updated to {}", id, newStatus);
+
+        log.info("Trip {} status updated from {} to {}", id, current, next);
 
         return toResponse(updated);
     }
 
     @Transactional
     public TripResponse rateTrip(Long id, RatingRequest request) {
+
         Trip trip = tripRepository.findById(id)
                 .orElseThrow(() -> new TripNotFoundException(id));
 
         if (trip.getStatus() != TripStatus.COMPLETED) {
-            throw new RuntimeException("Can only rate completed trips");
+            throw new BusinessException("Can only rate completed trips");
         }
 
         if (trip.getRating() != null) {
-            throw new RuntimeException("Trip already rated");
+            throw new BusinessException("Trip already rated");
         }
 
         trip.setRating(request.getRating());
+
         return toResponse(tripRepository.save(trip));
     }
 
     public StatisticsResponse getStatistics() {
-        LocalDateTime startOfDay = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0);
-        LocalDateTime endOfDay = LocalDateTime.now().withHour(23).withMinute(59).withSecond(59);
 
-        List<Trip> todayTrips = tripRepository.findByCreatedAtBetween(startOfDay, endOfDay);
+        LocalDateTime startOfDay = LocalDateTime.now()
+                .withHour(0).withMinute(0).withSecond(0);
 
-        Double avgPrice = tripRepository.findAveragePriceByStatus(TripStatus.COMPLETED);
+        LocalDateTime endOfDay = startOfDay.plusDays(1);
+
+        List<Trip> todayTrips =
+                tripRepository.findByCreatedAtBetween(startOfDay, endOfDay);
+
+        Double avgPrice =
+                tripRepository.findAveragePriceByStatus(TripStatus.COMPLETED);
 
         return StatisticsResponse.builder()
                 .totalTripsToday(todayTrips.size())
                 .averagePrice(avgPrice != null ? avgPrice : 0.0)
                 .build();
+    }
+    private void releaseDriver(Long driverId) {
+
+        if (driverId == null) return;
+
+        driverRepository.findById(driverId)
+                .ifPresent(driver -> {
+                    driver.setStatus(DriverStatus.AVAILABLE);
+                    log.info("Driver {} released and set to AVAILABLE", driverId);
+                });
     }
 
     private TripResponse toResponse(Trip trip) {
@@ -157,8 +177,8 @@ public class TripService {
                 .updatedAt(trip.getUpdatedAt())
                 .build();
     }
-    private boolean isValidStatusTransition(TripStatus current, TripStatus next) {
 
+    private boolean isValidStatusTransition(TripStatus current, TripStatus next) {
         return switch (current) {
             case CREATED -> next == TripStatus.ACCEPTED || next == TripStatus.CANCELLED;
             case ACCEPTED -> next == TripStatus.STARTED || next == TripStatus.CANCELLED;
