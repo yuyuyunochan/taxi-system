@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class TripService {
+    private final TripEventPublisher tripEventPublisher;
     private final DriverCacheService driverCacheService;
     private final TripRepository tripRepository;
     private final DriverRepository driverRepository;
@@ -71,7 +72,7 @@ public class TripService {
                 .build();
 
         Trip saved = tripRepository.save(trip);
-
+        tripEventPublisher.publishTripCreated(saved);
         log.info("Trip created: id={}, driver={}, price={}",
                 saved.getId(), driver.getId(), price);
 
@@ -113,7 +114,7 @@ public class TripService {
         }
 
         Trip updated = tripRepository.save(trip);
-
+        tripEventPublisher.publishTripStatusChanged(updated, current.name());
         log.info("Trip {} status updated from {} to {}", id, current, next);
 
         return toResponse(updated);
