@@ -19,6 +19,18 @@ public class NotificationTaskService {
     }
 
     @Transactional
+    public void createTask(Long userId, String message) {
+        NotificationTask task = NotificationTask.builder()
+                .userId(userId)
+                .message(message)
+                .status(NotificationStatus.PENDING)
+                .retryCount(0)
+                .build();
+
+        repository.save(task);
+    }
+
+    @Transactional
     public Optional<NotificationTask> claimNextTask() {
         var list = repository.findNextByStatusForUpdate(
                 NotificationStatus.PENDING,

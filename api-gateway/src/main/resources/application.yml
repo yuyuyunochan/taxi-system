@@ -1,0 +1,38 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      routes:
+        - id: user-auth
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/users/auth/**
+
+        - id: user-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/users/**
+
+        - id: trip-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/trips/**
+
+jwt:
+  secret: mySecretKeyForJWTTokenGenerationMustBe256BitsLongForHS256AlgorithmToWorkProperly
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    com.taxi.api_gateway: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,gateway
