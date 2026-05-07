@@ -18,8 +18,11 @@ public class TripController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public TripResponse createTrip(@Valid @RequestBody TripRequest request) {
-        return tripService.createTrip(request);
+    public TripResponse createTrip(
+            @RequestHeader("X-User-Id") Long passengerId,
+            @Valid @RequestBody TripRequest request) {
+
+        return tripService.createTrip(passengerId, request);
     }
 
     @GetMapping("/{id}")

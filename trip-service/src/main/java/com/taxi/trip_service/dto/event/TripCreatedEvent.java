@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
 public class TripCreatedEvent {
-
     private Long tripId;
     private Long passengerId;
     private Long driverId;

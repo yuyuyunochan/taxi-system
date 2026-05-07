@@ -36,13 +36,13 @@ public class TripService {
     private double pricePerKm;
 
     @Transactional
-    public TripResponse createTrip(TripRequest request) {
+    public TripResponse createTrip(Long passengerId, TripRequest request) {
         driverSyncService.syncAvailableDrivers();
-        if (!userServiceClient.passengerExists(request.getPassengerId())) {
-            throw new PassengerNotFoundException(request.getPassengerId());
+        if (!userServiceClient.passengerExists(passengerId)) {
+            throw new PassengerNotFoundException(passengerId);
         }
 
-        tripRepository.findActiveTripByPassenger(request.getPassengerId())
+        tripRepository.findActiveTripByPassenger(passengerId)
                 .ifPresent(existing -> {
                     throw new BusinessException(
                             "Passenger already has active trip with id: " + existing.getId()
@@ -63,7 +63,7 @@ public class TripService {
                 .setScale(2, RoundingMode.HALF_UP);
 
         Trip trip = Trip.builder()
-                .passengerId(request.getPassengerId())
+                .passengerId(passengerId)
                 .driverId(driver.getId())
                 .status(TripStatus.CREATED)
                 .origin(request.getOrigin())

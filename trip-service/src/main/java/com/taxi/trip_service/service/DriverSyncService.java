@@ -7,6 +7,7 @@ import com.taxi.trip_service.repository.DriverRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 
@@ -14,9 +15,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class DriverSyncService {
-
-    private final UserServiceClient userServiceClient;
     private final DriverRepository driverRepository;
+    private final UserServiceClient userServiceClient;
+    private final RestTemplate restTemplate = new RestTemplate();
 
     public void syncAvailableDrivers() {
         List<Long> externalDrivers = userServiceClient.getAvailableDriverIds();

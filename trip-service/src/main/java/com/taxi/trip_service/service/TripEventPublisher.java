@@ -37,6 +37,8 @@ public class TripEventPublisher {
 
         TripStatusChangedEvent event = TripStatusChangedEvent.builder()
                 .tripId(trip.getId())
+                .passengerId(trip.getPassengerId())
+                .driverId(trip.getDriverId())
                 .oldStatus(oldStatus)
                 .newStatus(trip.getStatus().name())
                 .changedAt(LocalDateTime.now())

@@ -12,6 +12,8 @@ import java.time.LocalDateTime;
 public class TripStatusChangedEvent {
 
     private Long tripId;
+    private Long passengerId;
+    private Long driverId;
     private String oldStatus;
     private String newStatus;
     private LocalDateTime changedAt;

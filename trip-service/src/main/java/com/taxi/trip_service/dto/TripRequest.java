@@ -7,9 +7,6 @@ import lombok.Data;
 @Data
 public class TripRequest {
 
-    @NotNull
-    private Long passengerId;
-
     @NotBlank
     private String origin;
 

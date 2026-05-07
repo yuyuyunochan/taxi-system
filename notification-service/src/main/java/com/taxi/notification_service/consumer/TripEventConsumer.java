@@ -42,6 +42,9 @@ public class TripEventConsumer {
                 event.getNewStatus()
         );
 
-        taskService.createTask(0L, message);
+        taskService.createTask(event.getPassengerId(), message);
+        if (event.getDriverId() != null) {
+            taskService.createTask(event.getDriverId(), message);
+        }
     }
 }
