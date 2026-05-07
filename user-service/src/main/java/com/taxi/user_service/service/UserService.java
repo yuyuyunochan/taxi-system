@@ -20,8 +20,7 @@ public class UserService {
     private final DriverRepository driverRepository;
 
     public Passenger createPassenger(PassengerRequest request) {
-
-        if (driverRepository.existsByEmail(request.getEmail())) {
+        if (passengerRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("Email already exists");
         }
 
@@ -32,12 +31,15 @@ public class UserService {
                 .build();
 
         log.info("Creating passenger: {}", passenger.getEmail());
-
         return passengerRepository.save(passenger);
     }
 
-    public Driver createDriver(DriverRequest request) {
+    public List<Passenger> getAllPassengers() {
+        log.info("Fetching all passengers");
+        return passengerRepository.findAll();
+    }
 
+    public Driver createDriver(DriverRequest request) {
         if (driverRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("Email already exists");
         }
@@ -55,17 +57,14 @@ public class UserService {
                 .build();
 
         log.info("Creating driver: {}", driver.getEmail());
-
         return driverRepository.save(driver);
     }
 
     public Driver updateDriverStatus(Long id, DriverStatus status) {
-
         Driver driver = driverRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Driver not found"));
 
         driver.setStatus(status);
-
         return driverRepository.save(driver);
     }
 

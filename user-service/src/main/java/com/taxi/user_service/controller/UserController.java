@@ -22,6 +22,11 @@ public class UserController {
         return userService.createPassenger(request);
     }
 
+    @GetMapping("/passengers")
+    public List<Passenger> getAllPassengers() {
+        return userService.getAllPassengers();
+    }
+
     @GetMapping("/passengers/{id}")
     public Passenger getPassenger(@PathVariable Long id) {
         return userService.getPassenger(id);
@@ -46,5 +51,18 @@ public class UserController {
     @GetMapping("/drivers/available")
     public List<Driver> availableDrivers() {
         return userService.getAvailableDrivers();
+    }
+
+
+    @GetMapping("/me")
+    public Object getCurrentUser(
+            @RequestHeader(value = "X-User-Id") Long userId,
+            @RequestHeader(value = "X-User-Role") String role) {
+
+        if ("PASSENGER".equals(role)) {
+            return userService.getPassenger(userId);
+        } else {
+            return userService.getDriver(userId);
+        }
     }
 }
