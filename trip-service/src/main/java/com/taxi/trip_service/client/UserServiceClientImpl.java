@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -28,23 +30,25 @@ public class UserServiceClientImpl implements UserServiceClient {
             return false;
         }
     }
-
     @Override
-    public Long findAvailableDriver() {
+    public List<Long> getAvailableDriverIds() {
         try {
-            Long[] drivers = restTemplate.getForObject(
+            List<java.util.Map<String, Object>> response = restTemplate.getForObject(
                     USER_SERVICE_URL + "/drivers/available",
-                    Long[].class
+                    List.class
             );
-            if (drivers != null && drivers.length > 0) {
-                return drivers[0];
-            }
-            return null;
+
+            if (response == null) return List.of();
+
+            return response.stream()
+                    .map(driverMap -> Long.valueOf(driverMap.get("id").toString()))
+                    .collect(java.util.stream.Collectors.toList());
+
         } catch (Exception e) {
-            return null;
+            log.error("Failed to fetch available drivers from User Service: {}", e.getMessage());
+            return List.of();
         }
     }
-
     @Override
     public void updateDriverStatus(Long driverId, String status) {
         try {

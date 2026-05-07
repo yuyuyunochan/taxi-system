@@ -6,7 +6,7 @@ spring:
     name: trip-service
 
   profiles:
-    active: stub
+    active: prod
 
   datasource:
     url: jdbc:postgresql://localhost:5434/trip_db

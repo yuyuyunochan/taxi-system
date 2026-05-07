@@ -31,13 +31,13 @@ public class TripService {
     private final TripRepository tripRepository;
     private final DriverRepository driverRepository;
     private final UserServiceClient userServiceClient;
-
+    private final DriverSyncService driverSyncService;
     @Value("${tariff.price-per-km:2.5}")
     private double pricePerKm;
 
     @Transactional
     public TripResponse createTrip(TripRequest request) {
-
+        driverSyncService.syncAvailableDrivers();
         if (!userServiceClient.passengerExists(request.getPassengerId())) {
             throw new PassengerNotFoundException(request.getPassengerId());
         }
@@ -54,6 +54,7 @@ public class TripService {
                 .orElseThrow(NoAvailableDriverException::new);
 
         driver.setStatus(DriverStatus.BUSY);
+        userServiceClient.updateDriverStatus(driver.getId(), "BUSY");
         driverCacheService.invalidateCache();
         double distance = 5 + Math.random() * 45;
 
@@ -160,7 +161,7 @@ public class TripService {
     private void releaseDriver(Long driverId) {
 
         if (driverId == null) return;
-
+        userServiceClient.updateDriverStatus(driverId, "AVAILABLE");
         driverRepository.findById(driverId)
                 .ifPresent(driver -> {
                     driver.setStatus(DriverStatus.AVAILABLE);
