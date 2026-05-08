@@ -23,6 +23,29 @@ spring:
           predicates:
             - Path=/api/trips/**
 
+        - id: user-service-docs
+          uri: http://localhost:8081
+          predicates:
+            - Path=/user/v3/api-docs
+          filters:
+            - RewritePath=/user/(?<segment>.*), /${segment}
+
+        - id: trip-service-docs
+          uri: http://localhost:8082
+          predicates:
+            - Path=/trip/v3/api-docs
+          filters:
+            - RewritePath=/trip/(?<segment>.*), /${segment}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui
+    urls:
+      - name: user-service
+        url: /user/v3/api-docs
+      - name: trip-service
+        url: /trip/v3/api-docs
+
 jwt:
   secret: mySecretKeyForJWTTokenGenerationMustBe256BitsLongForHS256AlgorithmToWorkProperly
 

@@ -33,6 +33,8 @@ spring:
     redis:
       host: localhost
       port: 6379
+jwt:
+  secret: mySecretKeyForJWTTokenGenerationMustBe256BitsLongForHS256AlgorithmToWorkProperly
 
 tariff:
   price-per-km: 2.5
