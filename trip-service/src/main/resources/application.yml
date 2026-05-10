@@ -25,7 +25,7 @@ spring:
 
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5673}
+    port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
 
@@ -37,5 +37,13 @@ spring:
 jwt:
   secret: ${JWT_SECRET:mySecretKeyForJWTTokenGenerationMustBe256BitsLongForHS256AlgorithmToWorkProperly}
 
+services:
+  user-service:
+    url: ${USER_SERVICE_URL:http://localhost:8081}
+
+ors:
+  api-key: ${ORS_API_KEY:eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjE4NjdhMWY3MTI0NDQ0NGZhY2I5MjczYjZlZDY5M2I2IiwiaCI6Im11cm11cjY0In0=}
+  geocode-url: https://api.openrouteservice.org/geocode/search
+  directions-url: https://api.openrouteservice.org/v2/directions/driving-car
 tariff:
-  price-per-km: 2.5
+  price-per-km: 50.0

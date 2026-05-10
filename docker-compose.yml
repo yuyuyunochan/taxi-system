@@ -127,6 +127,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: mySecretKeyForJWTTokenGenerationMustBe256BitsLongForHS256AlgorithmToWorkProperly
+      SERVICES_USER_SERVICE_URL: http://user-service:8081/api/users
+      ORS_API_KEY: eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjE4NjdhMWY3MTI0NDQ0NGZhY2I5MjczYjZlZDY5M2I2IiwiaCI6Im11cm11cjY0In0=
     ports:
       - "8082:8082"
     networks:

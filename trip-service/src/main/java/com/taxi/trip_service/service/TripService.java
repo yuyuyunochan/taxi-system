@@ -1,6 +1,7 @@
 package com.taxi.trip_service.service;
 
 import com.taxi.trip_service.client.UserServiceClient;
+import com.taxi.trip_service.client.OsmMapClient;
 import com.taxi.trip_service.dto.*;
 import com.taxi.trip_service.entity.Driver;
 import com.taxi.trip_service.entity.Trip;
@@ -32,7 +33,10 @@ public class TripService {
     private final DriverRepository driverRepository;
     private final UserServiceClient userServiceClient;
     private final DriverSyncService driverSyncService;
-    @Value("${tariff.price-per-km:2.5}")
+
+    private final OsmMapClient osmMapClient;
+
+    @Value("${tariff.price-per-km:50.0}") // Поставил дефолт 50.0
     private double pricePerKm;
 
     @Transactional
@@ -56,7 +60,8 @@ public class TripService {
         driver.setStatus(DriverStatus.BUSY);
         userServiceClient.updateDriverStatus(driver.getId(), "BUSY");
         driverCacheService.invalidateCache();
-        double distance = 5 + Math.random() * 45;
+
+        double distance = osmMapClient.getDistanceInKm(request.getOrigin(), request.getDestination());
 
         BigDecimal price = BigDecimal
                 .valueOf(distance * pricePerKm)
@@ -74,8 +79,8 @@ public class TripService {
 
         Trip saved = tripRepository.save(trip);
         tripEventPublisher.publishTripCreated(saved);
-        log.info("Trip created: id={}, driver={}, price={}",
-                saved.getId(), driver.getId(), price);
+        log.info("Trip created: id={}, driver={}, distance={}km, price={}",
+                saved.getId(), driver.getId(), distance, price);
 
         return toResponse(saved);
     }
